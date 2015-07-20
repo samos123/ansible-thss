@@ -1,0 +1,13 @@
+[controller]
+node-1
+node-2
+node-3
+
+[compute]
+node-4
+node-5
+
+[ceph]
+node-4
+node-5
+node-3

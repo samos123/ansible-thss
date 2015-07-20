@@ -1,0 +1,22 @@
+---
+- hosts: controller
+  remote_user: root
+  tasks:
+    - name: Increase Zabbix CacheSize to prevent warning
+      lineinfile: dest=/etc/zabbix/zabbix_server.conf line="CacheSize=200M"
+    - name: Add nf_conntrack_proto_gre module to default loaded modules
+      lineinfile: dest=/etc/modules line="nf_conntrack_proto_gre"
+    - name: Use default router router04 for Murano instead of creating extra one
+      lineinfile: dest=/etc/murano/murano.conf regexp="^router_name=.*" line="router_name=router04"
+    - name: Use THSS logo for Horizon
+      copy: src=logo-splash.png dest=/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+      notify: restart apache2
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+
+- hosts: all
+  remote_user: root
+  tasks:
+    - name: Add Sams public SSH keys
+      authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMGFYH2JtlGghsaMam3nwEN9gZO6zgZp2t8gw8q+r0mdvQkeH5vIz9uJlxXGAcaDEDHzusttSR9UPMUZDaFRJ4YvLChVFsrqFqdIxOkbIWVjN7p4k64vOeZkkUToqFRj9ib7FPdIb6brvu9ELM2GMSnFMbQvYvuSxho2/7g+lgSXYIOABSAEeQcSfiRN0PgmZt+7Cfv3NqDpCgjvcl0oLLjno5tUzcAa6KHTo17oeQP0N/Fr2YpsXcXPoaiO9m+OQVianVEpzZW0R0+m4+lRcuiHpJOq2EqHYnGt+luTzZ91sYPO5HLsGQT5ic5cgApWHcz11yHkgzMsp/ONperLnJ thinkpad"
