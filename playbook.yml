@@ -20,3 +20,14 @@
   tasks:
     - name: Add Sams public SSH keys
       authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMGFYH2JtlGghsaMam3nwEN9gZO6zgZp2t8gw8q+r0mdvQkeH5vIz9uJlxXGAcaDEDHzusttSR9UPMUZDaFRJ4YvLChVFsrqFqdIxOkbIWVjN7p4k64vOeZkkUToqFRj9ib7FPdIb6brvu9ELM2GMSnFMbQvYvuSxho2/7g+lgSXYIOABSAEeQcSfiRN0PgmZt+7Cfv3NqDpCgjvcl0oLLjno5tUzcAa6KHTo17oeQP0N/Fr2YpsXcXPoaiO9m+OQVianVEpzZW0R0+m4+lRcuiHpJOq2EqHYnGt+luTzZ91sYPO5HLsGQT5ic5cgApWHcz11yHkgzMsp/ONperLnJ thinkpad"
+
+- hosts: compute
+  tags: [ "compute" ]
+  tasks:
+    - name: Set reserved_host_memory_mb to 10 Gb because of Ceph also running on same host.
+      lineinfile: dest=/etc/nova/nova.conf insertafter="\[DEFAULT\]" line="reserved_host_memory_mb=10000" regexp="^reserved_host_memory_mb="
+      notify: restart nova-compute
+  handlers:
+    - name: restart nova-compute
+      service: name=nova-compute state=restarted
+

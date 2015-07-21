@@ -6,8 +6,10 @@ node-3
 [compute]
 node-4
 node-5
+node-6
+node-7
 
 [ceph]
+node-3
 node-4
 node-5
-node-3
