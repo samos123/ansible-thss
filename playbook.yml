@@ -8,12 +8,19 @@
       lineinfile: dest=/etc/modules line="nf_conntrack_proto_gre"
     - name: Use default router router04 for Murano instead of creating extra one
       lineinfile: dest=/etc/murano/murano.conf regexp="^router_name=.*" line="router_name=router04"
+    - name: Use default router router04 for Murano instead of creating extra one
+      lineinfile: dest=/etc/murano/murano.conf regexp="^create_router=" line="create_router=False"
+      notify: restart murano
     - name: Use THSS logo for Horizon
       copy: src=logo-splash.png dest=/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
       notify: restart apache2
   handlers:
     - name: restart apache2
       service: name=apache2 state=restarted
+    - name: restart murano
+      service: name={{ item }} state=restarted
+      with_items: [ "openstack-murano-api", "openstack-murano-engine" ]
+
 
 - hosts: all
   remote_user: root
