@@ -1,9 +1,13 @@
 ---
 - hosts: controller
+  tags: [ controller ]
   remote_user: root
   tasks:
+    - name: Add kernel.shmmax=1178257921 to sysctl.conf solve issue with Zabbix allocating shared memory
+      lineinfile: dest=/etc/sysctl.conf line="kernel.shmmax=1178257921" insertafter=EOF regexp="^kernel.shmmax="
+      notify: apply sysctl.conf
     - name: Increase Zabbix CacheSize to prevent warning
-      lineinfile: dest=/etc/zabbix/zabbix_server.conf line="CacheSize=200M"
+      lineinfile: dest=/etc/zabbix/zabbix_server.conf line="CacheSize=20M"
     - name: Add nf_conntrack_proto_gre module to default loaded modules
       lineinfile: dest=/etc/modules line="nf_conntrack_proto_gre"
     - name: Use default router router04 for Murano instead of creating extra one
@@ -14,12 +18,17 @@
     - name: Use THSS logo for Horizon
       copy: src=logo-splash.png dest=/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
       notify: restart apache2
+    - name: Zabbix add more pollers for fixing Zabbix poller processes more than 75% busy
+      lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp="^StartPollers=" line="StartPollers=50"
+
   handlers:
     - name: restart apache2
       service: name=apache2 state=restarted
     - name: restart murano
       service: name={{ item }} state=restarted
       with_items: [ "openstack-murano-api", "openstack-murano-engine" ]
+    - name: apply sysctl.conf
+      shell: sysctl -p
 
 
 - hosts: all
