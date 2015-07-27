@@ -3,9 +3,6 @@
   tags: [ controller ]
   remote_user: root
   tasks:
-    - name: Add kernel.shmmax=1178257921 to sysctl.conf solve issue with Zabbix allocating shared memory
-      lineinfile: dest=/etc/sysctl.conf line="kernel.shmmax=1178257921" insertafter=EOF regexp="^kernel.shmmax="
-      notify: apply sysctl.conf
     - name: Add nf_conntrack_proto_gre module to default loaded modules
       lineinfile: dest=/etc/modules line="nf_conntrack_proto_gre"
     - name: Use default router router04 for Murano instead of creating extra one
@@ -16,18 +13,11 @@
     - name: Use THSS logo for Horizon
       copy: src=logo-splash.png dest=/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
       notify: restart apache2
-    - name: Tweak zabbix_server.conf
-      lineinfile: dest=/etc/zabbix/zabbix_server.conf regexp="{{ item.regex }}" line="{{ item.line }}"
-      with_items:
-        - { "regex":  "^StartPollers=", "line": "StartPollers=5"}
-        - { "regex": "StartPollersUnreachable=", "line": "StartPollersUnreachable=3"}
-        - { "regex": "^CacheSize=", "line": "CacheSize=200M"}
-        - { "regex": "StartDBSyncers=", "line": "StartDBSyncers=10"}
-        - { "regex": "HistoryCacheSize=", "line": "HistoryCacheSize=512M"}
-        - { "regex": "TrendCacheSize=", "line": "TrendCacheSize=512M"}
-        - { "regex": "HistoryTextCacheSize=", "line": "HistoryTextCacheSize=512M"}
     - name: Prefer physical controller as mysql server in haproxy
       copy: src=haproxy-110-mysqld.cfg dest=/etc/haproxy/conf.d/110-mysqld.cfg
+    - name: Disable boot from image, only allow booting from volume in horizon
+      lineinfile: regexp='\("image_id", _\("Boot from image"\)\),' state=absent dest=/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/instances/workflows/create_instance.py backup=yes
+    - lineinfile: regexp='\("instance_snapshot_id", _\("Boot from snapshot"\)\),' state=absent dest=/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/instances/workflows/create_instance.py
 
   handlers:
     - name: restart apache2
@@ -44,18 +34,10 @@
   tasks:
     - name: Add Sams public SSH keys
       authorized_key: user=root key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMGFYH2JtlGghsaMam3nwEN9gZO6zgZp2t8gw8q+r0mdvQkeH5vIz9uJlxXGAcaDEDHzusttSR9UPMUZDaFRJ4YvLChVFsrqFqdIxOkbIWVjN7p4k64vOeZkkUToqFRj9ib7FPdIb6brvu9ELM2GMSnFMbQvYvuSxho2/7g+lgSXYIOABSAEeQcSfiRN0PgmZt+7Cfv3NqDpCgjvcl0oLLjno5tUzcAa6KHTo17oeQP0N/Fr2YpsXcXPoaiO9m+OQVianVEpzZW0R0+m4+lRcuiHpJOq2EqHYnGt+luTzZ91sYPO5HLsGQT5ic5cgApWHcz11yHkgzMsp/ONperLnJ thinkpad"
-    - name: Tweak zabbix_agent.conf
-      lineinfile: dest=/etc/zabbix/zabbix_agent.conf regexp="{{ item.regex }}" line="{{ item.line }}"
-      with_items:
-        - { "regex":  "BufferSend=", "line": "BufferSend=100"}
-        - { "regex":  "BufferSize=", "line": "BufferSize=10000"}
-      notify: restart zabbix-agent
+    - name: disable zabbix from running
+      service: name=zabbix-agent enabled=no
 
-  handlers:
-    - name: restart zabbix-agent
-      service: name=zabbix-agent state=restarted
-
-
+ 
 - hosts: compute
   tags: [ "compute" ]
   tasks:
